@@ -1,0 +1,2 @@
+pytest
+pyln-testing>=24.11.1
