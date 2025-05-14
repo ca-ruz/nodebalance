@@ -8,6 +8,9 @@ from collections import OrderedDict
 
 plugin = Plugin()
 
+# Valid currencies supported by CoinGecko
+VALID_CURRENCIES = ["usd", "eur", "mxn", "gbp", "vnd"]
+
 # Default currencies and fallback rates (msat as base)
 DEFAULT_CURRENCIES = ["usd", "mxn"]
 CONVERSION_RATES = {
@@ -159,6 +162,18 @@ def node_balance(plugin, mode="total", currencies=""):
         if not fiat_currencies:
             fiat_currencies = DEFAULT_CURRENCIES
         plugin.log(f"Parsed fiat currencies: {fiat_currencies}")
+
+        # Check for invalid currencies in rate mode
+        if mode == "rate":
+            invalid_currencies = [c for c in fiat_currencies if c not in VALID_CURRENCIES]
+            if invalid_currencies:
+                plugin.log(f"Invalid currencies detected: {invalid_currencies}")
+                rates_response = {
+                    "rates": {c: "Rate unavailable" if c in invalid_currencies else "Rate unavailable" for c in fiat_currencies},
+                    "timestamp": datetime.fromtimestamp(time.time()).isoformat(),
+                    "cached": False
+                }
+                return rates_response
 
         # Fetch currency rates
         rates = get_currency_rates(fiat_currencies)

@@ -23,9 +23,11 @@ def test_nodebalance_all_currencies(node_factory):
         bitcoind.generate_block(6)
         sync_blockheight(bitcoind, [l1])
 
-        # Test each currency
+        # One API call for all currencies
+        bal = l1.rpc.nodebalance(mode="rate", currencies="usd,eur,mxn,gbp,vnd")
         for curr in mock_get.return_value.json.return_value:
-            bal = l1.rpc.nodebalance(mode="rate", currencies=curr.upper())  # CoinGecko uses lowercase, plugin may expect uppercase
+            assert curr.lower() in bal["rates"], f"Rate for {curr.upper()} missing"
+
             assert "rates" in bal, "Missing rates"
             assert curr.lower() in bal["rates"], f"Rate for {curr.upper()} missing"
             assert isinstance(bal["rates"][curr.lower()], str), f"Rate for {curr.upper()} should be a string"

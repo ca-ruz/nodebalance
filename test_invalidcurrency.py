@@ -10,6 +10,7 @@ def test_nodebalance_invalid_currency(node_factory):
     """
     l1 = node_factory.get_nodes(1, opts=plugin)[0]
 
+    # Check invalid currency XYZ returns Rate unavailable
     response = l1.rpc.nodebalance(mode="rate", currencies="XYZ")
     assert "rates" in response
     assert "xyz" in response["rates"]  # lowercase key
@@ -19,3 +20,4 @@ if __name__ == "__main__":
     from pyln.testing.fixtures import setup_node_factory
     node_factory = setup_node_factory()
     test_nodebalance_invalid_currency(node_factory)
+    
