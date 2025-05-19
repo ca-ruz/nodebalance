@@ -1,12 +1,12 @@
 # Nodebalance Plugin
 
-A Core Lightning plugin to retrieve and display on-chain and channel balances, with optional fiat currency conversion using the CoinGecko API.
+A Core Lightning plugin to retrieve and display on-chain and channel balances, with optional fiat currency conversion using external APIs (CoinGecko, CoinPaprika, CoinCap).
 
 ## Prerequisites
 
 - Python 3.8+
-- Core Lightning 24.11*
-- Internet access for fiat currency conversion (CoinGecko API)
+- Core Lightning 24.11+
+- Internet access for fiat currency conversion
 
 ## Installation
 
@@ -18,7 +18,7 @@ cd nodebalance
 
 2. Create and activate a virtual environment:
 ```bash
-python -m vent .venv
+python -m venv .venv
 source .venv/bin/activate
 ```
 
@@ -67,7 +67,8 @@ lightning-cli nodebalance onchain usd,eur
 ```
 Output:
 ```json
-{  "onchain_balance": {
+{
+  "onchain_balance": {
     "btc": "0.00197999 btc",
     "sats": "197999 sats",
     "msats": "197999000 msats",
@@ -75,7 +76,7 @@ Output:
     "eur": "183.68 EUR"
   }
 }
-````
+```
 
 3. **Channel Balances**:
 ```bash
@@ -83,7 +84,8 @@ lightning-cli nodebalance channels
 ```
 Output:
 ```json
-{  "channel_balance": {
+{
+  "channel_balance": {
     "btc": "0.00002000 btc",
     "sats": "2000 sats",
     "msats": "2000000 msats",
@@ -121,7 +123,7 @@ Output:
     }
   ]
 }
-````
+```
 
 5. **Fiat Rates**:
 ```bash
@@ -139,6 +141,14 @@ Output:
   "cached": true
 }
 ```
+
+## Supported Currencies
+
+The plugin supports the following fiat currencies for conversion (case-insensitive):
+
+- AED, ARS, AUD, BDT, BHD, BMD, BRL, CAD, CHF, CLP, CNY, CZK, DKK, EUR, GBP, HKD, HUF, IDR, ILS, INR, JPY, KRW, KWD, LKR, MMK, MXN, MYR, NGN, NOK, NZD, PHP, PKR, PLN, RUB, SAR, SEK, SGD, THB, TRY, TWD, UAH, USD, VEF, VND, XAG, XAU, XDR, ZAR
+
+Specify currencies as a comma-separated list (e.g., `usd,mxn,eur`). Invalid currencies will return "Rate unavailable" in rate mode.
 
 ## Running Tests
 
@@ -160,7 +170,7 @@ pytest -vs <name_of_the_test_file.py>
 ```bash
 source ~/code/lightning/contrib/startup_regtest.sh
 start_ln
-````
+```
 
 2. Fund the nodes:
 ```bash
@@ -174,12 +184,12 @@ l1-cli plugin start $PWD/nodebalance.py
 
 4. Check balances or rates:
 ```bash
-l1-cli nodebalance total usd,%ur
+l1-cli nodebalance total usd,eur
 ```
 or
 ```bash
 l1-cli nodebalance rate usd,mxn
-````
+```
 
 ## Plugin Configuration
 
@@ -187,16 +197,23 @@ The plugin accepts the following configuration options:
 
 - `nodebalance-mode`: Default output mode (`total`, `onchain`, `channels`, `channel-details`, `rate`). Default: `total`.
 - `nodebalance-currencies`: Comma-separated fiat currencies (e.g., `usd,mxn,eur`). Default: `usd,mxn`.
+- `nodebalance-api`: Preferred API for fiat currency rates (`coingecko`, `coinpaprika`, `coincap`, or `auto`). Default: `auto` (tries CoinGecko, then CoinPaprika, then CoinCap).
 
 Example:
 ```bash
-lightningd --plugin=$PWD/nodebalance.py --nodebalance-mode=channels --nodebalance-currencies=usd,eur
+lightningd --plugin=$PWD/nodebalance.py --nodebalance-mode=channels --nodebalance-currencies=usd,eur --nodebalance-api=coingecko
 ```
+
+## Notes
+
+- The plugin fetches fiat currency rates from external APIs (CoinGecko, CoinPaprika, CoinCap) and caches them for 1 hour to reduce API calls.
+- If an API fails or a currency is unsupported, the plugin falls back to the next API or uses default rates (e.g., 1 BTC ≈ 100,000 USD, 2,000,000 MXN).
+- Rates are validated to ensure realistic values (1 BTC between 1,000 and 10,000,000,000 fiat). Invalid rates are skipped.
 
 ## Contributing
 
 1. Fork the repository.
-3. Create a new branch for your feature.
+2. Create a new branch for your feature.
 3. Make your changes.
 4. Run the test suite to ensure everything works.
 5. Submit a pull request.
